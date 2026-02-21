@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App - Glass Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+</head>
+<body>
+
+<div class="card">
+    <div class="search">
+        <input type="text" placeholder="Enter city name" spellcheck="false">
+        <button class="search-btn">🔍</button>
+    </div>
+
+    <div class="error">
+        <p>Invalid city name</p>
+    </div>
+
+    <div class="weather">
+        <dotlottie-player id="main-anim"
+            background="transparent"
+            speed="1"
+            style="width: 200px; height: 200px; margin: 0 auto;"
+            loop autoplay>
+        </dotlottie-player>
+
+        <h1 class="temp">--°C</h1>
+        <h2 class="city">City</h2>
+
+        <div class="sun-container">
+            <div class="sun-item">
+                <img src="images/sunrise.svg" alt="Sunrise Icon" class="sun-icon">
+                <span id="sunrise-time">--:--</span>
+            </div>
+            <div class="sun-item">
+                <img src="images/sunset.svg" alt="Sunset Icon" class="sun-icon">
+                <span id="sunset-time">--:--</span>
+            </div>
+        </div>
+
+        <div class="details">
+            <div class="col">
+                <div>
+                    <p class="humidity">--%</p>
+                    <p>Humidity</p>
+                </div>
+            </div>
+            <div class="col">
+                <div>
+                    <p class="wind">-- km/h</p>
+                    <p>Wind Speed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const apiKey = "fd739f9cd21eb339d5de4fbf5050898a";
+const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
+
+const searchBox = document.querySelector(".search input");
+const searchBtn = document.querySelector(".search button");
+const mainAnim = document.getElementById("main-anim");
+
+async function checkweather(city) {
+    if(city === "") return;
+
+    const response = await fetch(apiUrl + city + `&appid=${apiKey}`);
+
+    if(response.status == 404){
+        document.querySelector(".error").style.display = "block";
+        document.querySelector(".weather").style.display = "none";
+        return;
+    }
+
+    const data = await response.json();
+
+    document.querySelector(".city").innerHTML = data.name;
+    document.querySelector(".temp").innerHTML = Math.round(data.main.temp) + "°C";
+    document.querySelector(".humidity").innerHTML = data.main.humidity + "%";
+    document.querySelector(".wind").innerHTML = data.wind.speed + " km/h";
+
+
+    const currentTime = data.dt * 1000;
+    const sunrise = data.sys.sunrise * 1000;
+    const sunset = data.sys.sunset * 1000;
+
+    document.getElementById("sunrise-time").innerHTML =
+        new Date(sunrise).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+    document.getElementById("sunset-time").innerHTML =
+        new Date(sunset).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+    const condition = data.weather[0].main;
+    let animPath = "";
+    let gradient = "";
+
+   
+    const isDay = currentTime >= sunrise && currentTime < sunset;
+
+    if(isDay){
+        if(condition === "Clear"){
+            gradient = "linear-gradient(135deg,#fff3d6,#ffd6e8)";
+            animPath = "mimages/sunny.lottie"; 
+        }
+        else if(condition === "Clouds"){
+            gradient = "linear-gradient(135deg,#f2f4f7,#e3e7ec)";
+            animPath = "mimages/Weather-windy.lottie";
+        }
+        else if(condition === "Rain"){
+            gradient = "linear-gradient(135deg,#e6f0f7,#cfdbe9)";
+            animPath = "mimages/Rainy.lottie";
+        }
+        else if(condition === "Snow"){
+            gradient = "linear-gradient(135deg,#e6f0f7,#cfdbe9)";
+            animPath = "mimages/Weather-snow.lottie"; 
+        }
+    }
+    else {
+        if(condition === "Clear"){
+            gradient = "linear-gradient(135deg,#e3ecff,#f3f6ff)";
+            animPath = "mimages/Weather-night.lottie";
+        }
+        else if(condition === "Clouds"){
+            gradient = "linear-gradient(135deg,#e4e8f0,#d5dbe6)";
+            animPath = "mimages/Weather-cloudy(night).lottie";
+        }
+        else if(condition === "Rain"){
+            gradient = "linear-gradient(135deg,#dbe6f5,#c4d3ea)";
+            animPath = "mimages/Weather-rainy(night).lottie";
+        }
+        else if(condition === "Snow"){
+            gradient = "linear-gradient(135deg,#dbe6f5,#c4d3ea)";
+            animPath = "mimages/Weather-snow.lottie"; 
+        }
+    }
+
+    document.body.style.background = gradient;
+    mainAnim.load(animPath);
+
+    document.querySelector(".weather").style.display = "block";
+    document.querySelector(".error").style.display = "none";
+}
+
+searchBtn.addEventListener("click", () => checkweather(searchBox.value));
+searchBox.addEventListener("keypress", (e) => {
+    if(e.key === "Enter") checkweather(searchBox.value);
+});
+</script>
+</body>
+</html>
